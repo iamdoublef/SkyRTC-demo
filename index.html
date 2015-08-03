@@ -85,6 +85,7 @@
   <div id="files">
   </div>
 </body>
+<script type="text/javascript" src="/adapter.js"></script>
 <script type="text/javascript" src="/SkyRTC-client.js"></script>
 <script type="text/javascript">
   var videos = document.getElementById("videos");
@@ -175,6 +176,7 @@
   });
   //成功创建WebSocket连接
   rtc.on("connected", function(socket) {
+	  console.log("connected="+socket);
     //创建本地视频流
     rtc.createStream({
       "video": true,
@@ -183,7 +185,9 @@
   });
   //创建本地视频流成功
   rtc.on("stream_created", function(stream) {
-    document.getElementById('me').src = URL.createObjectURL(stream);
+	  //TODO
+//     document.getElementById('me').src = URL.createObjectURL(stream);
+    attachMediaStream(document.getElementById("me"), stream); 
     document.getElementById('me').play();
   });
   //创建本地视频流失败
@@ -192,6 +196,8 @@
   });
   //接收到其他用户的视频流
   rtc.on('pc_add_stream', function(stream, socketId) {
+	  console.log("pc_add_stream="+stream); 
+	  console.log("pc_add_stream,socketId="+socketId); 
     var newVideo = document.createElement("video"),
         id = "other-" + socketId;
     newVideo.setAttribute("class", "other");
@@ -214,6 +220,7 @@
     msgs.appendChild(p);
   });
   //连接WebSocket服务器
+  console.info("ws:" + window.location.href.substring(window.location.protocol.length).split('#')[0]+";"+window.location.hash.slice(1));
   rtc.connect("ws:" + window.location.href.substring(window.location.protocol.length).split('#')[0], window.location.hash.slice(1));
 </script>
 </html>

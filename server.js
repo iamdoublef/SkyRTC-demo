@@ -1,15 +1,25 @@
+console.log('init');
+
 var express = require('express');
 var app = express();
 var server = require('http').createServer(app);
+console.log('server:'+server);
 var SkyRTC = require('skyrtc').listen(server);
+console.log('SkyRTC:'+SkyRTC);
 var path = require("path");
+console.log('path'+ path);
 
 var port = process.env.PORT || 3000;
+console.log('port'+ port);
+
 server.listen(port);
+
+
 
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/', function(req, res) {
+	
 	res.sendfile(__dirname + '/index.html');
 });
 

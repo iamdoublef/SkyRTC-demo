@@ -1,5 +1,5 @@
 var SkyRTC = function() {
-    var PeerConnection = (window.PeerConnection || window.webkitPeerConnection00 || window.webkitRTCPeerConnection || window.mozRTCPeerConnection);
+    var PeerConnection = (window.PeerConnection || window.webkitPeerConnection00 || window.webkitRTCPeerConnection || window.mozRTCPeerConnection|| window.RTCPeerConnection);
     var URL = (window.URL || window.webkitURL || window.msURL || window.oURL);
     var getUserMedia = (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia);
     var nativeRTCIceCandidate = (window.mozRTCIceCandidate || window.RTCIceCandidate);
@@ -225,15 +225,18 @@ var SkyRTC = function() {
     };
 
     //将流绑定到video标签上用于输出
+    //TODO
     skyrtc.prototype.attachStream = function(stream, domId) {
         var element = document.getElementById(domId);
         if (navigator.mozGetUserMedia) {
             element.mozSrcObject = stream;
             element.play();
         } else {
-            element.src = webkitURL.createObjectURL(stream);
+//            element.src = webkitURL.createObjectURL(stream);
+            attachMediaStream(document.getElementById(domId), stream); 
         }
-        element.src = webkitURL.createObjectURL(stream);
+//        element.src = webkitURL.createObjectURL(stream);
+        attachMediaStream(document.getElementById(domId), stream); 
     };
 
 
@@ -327,9 +330,9 @@ var SkyRTC = function() {
             that.emit("pc_get_ice_candidate", evt.candidate, socketId, pc);
         };
 
-        pc.onopen = function() {
-            that.emit("pc_opened", socketId, pc);
-        };
+//        pc.onopen = function() {
+//            that.emit("pc_opened", socketId, pc);
+//        };
 
         pc.onaddstream = function(evt) {
             that.emit('pc_add_stream', evt.stream, socketId, pc);
