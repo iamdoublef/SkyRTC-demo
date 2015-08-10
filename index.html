@@ -196,7 +196,7 @@
   });
   //接收到其他用户的视频流
   rtc.on('pc_add_stream', function(stream, socketId) {
-	  console.log("pc_add_stream="+stream); 
+// 	  console.log("pc_add_stream="+stream); 
 	  console.log("pc_add_stream,socketId="+socketId); 
     var newVideo = document.createElement("video"),
         id = "other-" + socketId;

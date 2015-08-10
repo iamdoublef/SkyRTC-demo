@@ -318,13 +318,15 @@ if (navigator.mozGetUserMedia) {
     }
 
     attachMediaStream = function (element, stream) {
-        console.log("Attaching media stream");
+        console.log("Attaching media stream + complexity");
         if (element.isWebRtcPlugin) {
             element.src = stream;
             return element;
         }
         else if (element.nodeName.toLowerCase() === 'video') {
+        	console.log("Attaching media stream into video");
             if (!element.pluginObj && stream) {
+            	console.log("Attaching media stream into create video");
                 var _pluginObj = document.createElement('object');
                 var _isIE = (Object.getOwnPropertyDescriptor && Object.getOwnPropertyDescriptor(window, "ActiveXObject")) || ("ActiveXObject" in window);
                 if (_isIE) {
@@ -358,6 +360,7 @@ if (navigator.mozGetUserMedia) {
 
                 document.body.appendChild(_pluginObj);
                 if (element.parentNode) {
+                	console.log("Attaching media stream replaceChild" + element.parentNode);
                     element.parentNode.replaceChild(_pluginObj, element); // replace (and remove) element
                     // add element again to be sure any query() will succeed
                     document.body.appendChild(element);
@@ -366,6 +369,7 @@ if (navigator.mozGetUserMedia) {
             }
 
             if (element.pluginObj) {
+            	console.log("Attaching media stream had pluginObj");
                 element.pluginObj.bindEventListener('play', function (objvid) {
                     if (element.pluginObj) {
                         if (element.pluginObj.getAttribute("autowidth") && objvid.videoWidth) {

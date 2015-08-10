@@ -94,10 +94,12 @@ var SkyRTC = function() {
                     "room": room
                 }
             }));
+            console.log("socket_opened_event");
             that.emit("socket_opened", socket);
         };
 
         socket.onmessage = function(message) {
+        	 console.log("socket_receive_message:" + message.data);
             var json = JSON.parse(message.data);
             if (json.eventName) {
                 that.emit(json.eventName, json.data);
@@ -107,10 +109,12 @@ var SkyRTC = function() {
         };
 
         socket.onerror = function(error) {
+        	console.log("onerror:"+error);
             that.emit("socket_error", error, socket);
         };
 
         socket.onclose = function(data) {
+        	console.log("socket.onclose:"+data);
             that.localMediaStream.close();
             var pcs = that.peerConnections;
             for (i = pcs.length; i--;) {
@@ -125,6 +129,7 @@ var SkyRTC = function() {
         };
 
         this.on('_peers', function(data) {
+        	console.log("socket._peers:"+data.connections);
             //获取所有服务器上的
             that.connections = data.connections;
             that.me = data.you;
@@ -133,9 +138,16 @@ var SkyRTC = function() {
         });
 
         this.on("_ice_candidate", function(data) {
-            var candidate = new nativeRTCIceCandidate(data);
+        	try{
+        		var candidate = new nativeRTCIceCandidate(data.candidate);
+        	}catch(e){
+        		console.log("new nativeRTCIceCandidate error ");
+        		return;
+        	}
             var pc = that.peerConnections[data.socketId];
-            pc.addIceCandidate(candidate);
+            pc.addIceCandidate(candidate,
+                    function() { console.log("socket.addIceCandidate:");},
+                    function(err) { console.log("socket.addIceCandidate error:"+err); });
             that.emit('get_ice_candidate', candidate);
         });
 
@@ -213,7 +225,6 @@ var SkyRTC = function() {
             that.emit("stream_create_error", new Error('WebRTC is not yet supported in this browser.'));
         }
     };
-
     //将本地流添加到所有的PeerConnection实例中
     skyrtc.prototype.addStreams = function() {
         var i, m,
@@ -233,7 +244,9 @@ var SkyRTC = function() {
             element.play();
         } else {
 //            element.src = webkitURL.createObjectURL(stream);
-            attachMediaStream(document.getElementById(domId), stream); 
+        	console.log("attachStream:domid"+domId);
+            attachMediaStream(element, stream);
+            element.play();
         }
 //        element.src = webkitURL.createObjectURL(stream);
         attachMediaStream(document.getElementById(domId), stream); 
@@ -250,11 +263,12 @@ var SkyRTC = function() {
             that = this,
             pcCreateOfferCbGen = function(pc, socketId) {
                 return function(session_desc) {
+                	console.log("createOffer session_desc"+session_desc.sdp);
                     pc.setLocalDescription(session_desc);
                     that.socket.send(JSON.stringify({
                         "eventName": "__offer",
                         "data": {
-                            "sdp": session_desc,
+                            "sdp": session_desc.sdp,
                             "socketId": socketId
                         }
                     }));
@@ -279,14 +293,19 @@ var SkyRTC = function() {
     skyrtc.prototype.sendAnswer = function(socketId, sdp) {
         var pc = this.peerConnections[socketId];
         var that = this;
-        pc.setRemoteDescription(new nativeRTCSessionDescription(sdp));
+        var offer = new RTCSessionDescription({
+            type: 'offer',
+            sdp: sdp
+          });
+        pc.setRemoteDescription(new nativeRTCSessionDescription(offer));
         pc.createAnswer(function(session_desc) {
+        	console.log("createAnswer session_desc:"+session_desc.sdp)
             pc.setLocalDescription(session_desc);
             that.socket.send(JSON.stringify({
                 "eventName": "__answer",
                 "data": {
                     "socketId": socketId,
-                    "sdp": session_desc
+                    "sdp": session_desc.sdp
                 }
             }));
         }, function(error) {
@@ -297,7 +316,11 @@ var SkyRTC = function() {
     //接收到answer类型信令后将对方的session描述写入PeerConnection中
     skyrtc.prototype.receiveAnswer = function(socketId, sdp) {
         var pc = this.peerConnections[socketId];
-        pc.setRemoteDescription(new nativeRTCSessionDescription(sdp));
+        var answer = new RTCSessionDescription({
+            type: 'answer',
+            sdp: sdp
+          });
+        pc.setRemoteDescription(new nativeRTCSessionDescription(answer));
     };
 
 
@@ -318,15 +341,18 @@ var SkyRTC = function() {
         var pc = new PeerConnection(iceServer);
         this.peerConnections[socketId] = pc;
         pc.onicecandidate = function(evt) {
-            if (evt.candidate)
-                that.socket.send(JSON.stringify({
+            if (evt.candidate){
+            	var msg = JSON.stringify({
                     "eventName": "__ice_candidate",
                     "data": {
                         "label": evt.candidate.sdpMLineIndex,
                         "candidate": evt.candidate.candidate,
                         "socketId": socketId
                     }
-                }));
+                });
+                that.socket.send(msg);
+                console.log("onicecandidate:" + msg)
+            }
             that.emit("pc_get_ice_candidate", evt.candidate, socketId, pc);
         };
 
